@@ -142,6 +142,13 @@ async function signInWithProvider(provider, label) {
     if (err?.code === 'auth/invalid-api-key') {
       throw new Error('Invalid Firebase API key. Check VITE_FIREBASE_API_KEY.');
     }
+    if (err?.code === 'auth/invalid-credential') {
+      throw new Error(
+        label === 'X'
+          ? 'X credentials rejected. In developer.x.com: enable OAuth 1.0a, set callback https://spaceimpact-bb672.firebaseapp.com/__/auth/handler, then paste the Consumer API Key + Secret (not Bearer/Access tokens) into Firebase → Authentication → Twitter.'
+          : 'Invalid credential. Check the provider keys in Firebase Console.'
+      );
+    }
     throw new Error(err?.message || `${label} sign-in failed`);
   }
 }

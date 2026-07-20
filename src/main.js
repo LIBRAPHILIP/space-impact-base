@@ -13,7 +13,6 @@ import {
   initAuth,
   onAuthChange,
   signInWithGoogle,
-  signInWithX,
   signOut,
   isAuthConfigured,
   consumeLastAuthError,
@@ -109,10 +108,7 @@ function updateAuthUI(snap) {
     signinBtn.classList.add('hidden');
     userInfo.classList.remove('hidden');
     $('user-name').textContent = snap.user.displayName;
-    const tags = [];
-    if (snap.user.isX) tags.push('X');
-    if (snap.user.isGoogle) tags.push('Google');
-    $('user-providers').textContent = tags.join(' · ') || 'Pilot';
+    $('user-providers').textContent = snap.user.isGoogle ? 'Google' : 'Pilot';
     const av = $('user-avatar');
     if (snap.user.photoURL) {
       av.src = snap.user.photoURL;
@@ -137,19 +133,13 @@ function updateAuthUI(snap) {
     greeting.textContent = '';
   }
 
-  const setupSteps = $('auth-setup-steps');
   if (authStatus) {
     if (!snap.configured) {
-      authStatus.textContent =
-        'Auth not configured yet. Add Firebase env vars (Google + X providers) — see README.';
-      setupSteps?.classList.remove('hidden');
+      authStatus.textContent = 'Auth not configured yet. Add Firebase env vars — see README.';
     } else if (snap.signedIn) {
       authStatus.textContent = `Signed in as ${snap.user.displayName}.`;
-      setupSteps?.classList.add('hidden');
     } else {
-      authStatus.textContent =
-        'If login fails with “config not found”, click Get started under Authentication first.';
-      setupSteps?.classList.remove('hidden');
+      authStatus.textContent = 'Secure OAuth via Firebase Auth · Google.';
     }
   }
 }
@@ -170,24 +160,20 @@ function openAuthModal() {
       : menuCard;
   setOverlay(true, authCard);
   const ready = isAuthConfigured();
-  $('auth-x').disabled = !ready;
   $('auth-google').disabled = !ready;
   if (!ready) {
     $('auth-status').textContent =
-      'Add VITE_FIREBASE_* env vars and enable Google + Twitter in Firebase Console.';
+      'Add VITE_FIREBASE_* env vars and enable Google in Firebase Console.';
   }
 }
 
-async function handleAuth(provider) {
+async function handleGoogleAuth() {
   const status = $('auth-status');
-  const xBtn = $('auth-x');
   const gBtn = $('auth-google');
-  xBtn.disabled = true;
   gBtn.disabled = true;
-  status.textContent = provider === 'x' ? 'Opening X…' : 'Opening Google…';
+  status.textContent = 'Opening Google…';
   try {
-    const result = provider === 'x' ? await signInWithX() : await signInWithGoogle();
-    // redirect flows leave the page; popup returns here
+    const result = await signInWithGoogle();
     if (result?.signedIn && result.user) {
       toast(`Signed in as ${result.user.displayName}`);
       status.textContent = `Welcome, ${result.user.displayName}`;
@@ -200,9 +186,7 @@ async function handleAuth(provider) {
     status.textContent = e.message || 'Sign-in failed';
     toast(e.message || 'Sign-in failed');
   } finally {
-    const ready = isAuthConfigured();
-    xBtn.disabled = !ready;
-    gBtn.disabled = !ready;
+    gBtn.disabled = !isAuthConfigured();
   }
 }
 
@@ -277,7 +261,7 @@ function updateContractStatus() {
   if (isContractConfigured()) parts.push(`NFT: ${shortAddress(NFT_CONTRACT_ADDRESS)}`);
   else parts.push('NFT: demo mode');
   parts.push(WC_PROJECT_ID ? 'WalletConnect: ready' : 'WC: set project id');
-  parts.push(isAuthConfigured() ? 'Auth: Google+X' : 'Auth: configure Firebase');
+  parts.push(isAuthConfigured() ? 'Auth: Google' : 'Auth: configure Firebase');
   el.textContent = parts.join(' · ');
 }
 
@@ -537,13 +521,9 @@ $('auth-back').addEventListener('click', () => {
   audio.play('ui');
   showCard(returnToCard || menuCard);
 });
-$('auth-x').addEventListener('click', async () => {
-  audio.play('ui');
-  await handleAuth('x');
-});
 $('auth-google').addEventListener('click', async () => {
   audio.play('ui');
-  await handleAuth('google');
+  await handleGoogleAuth();
 });
 $('signout-btn').addEventListener('click', async () => {
   audio.play('ui');
@@ -613,14 +593,13 @@ refreshRecords();
 initAuth();
 onAuthChange(updateAuthUI);
 
-// Show X/Google redirect errors after return to the page
+// Show Google redirect errors after return to the page
 const redirectAuthErr = consumeLastAuthError();
 if (redirectAuthErr) {
   toast(redirectAuthErr);
   setOverlay(true, authCard);
   const status = $('auth-status');
   if (status) status.textContent = redirectAuthErr;
-  $('auth-x-help')?.setAttribute('open', '');
 }
 
 game._draw();

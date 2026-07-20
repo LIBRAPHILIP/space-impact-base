@@ -132,17 +132,10 @@
               <p class="eyebrow">PILOT IDENTITY</p>
               <h2>SIGN IN / SIGN UP</h2>
               <p class="lede">
-                Continue with <strong>X</strong> or <strong>Google</strong>. First login creates your account
-                automatically — no password needed.
+                Continue with <strong>Google</strong>. First login creates your account automatically — no
+                password needed.
               </p>
               <div class="auth-options">
-                <button id="auth-x" class="btn btn-auth btn-x" type="button">
-                  <span class="auth-icon" aria-hidden="true">𝕏</span>
-                  <span class="auth-copy">
-                    <span class="opt-title">Continue with X</span>
-                    <span class="opt-sub">X / Twitter account</span>
-                  </span>
-                </button>
                 <button id="auth-google" class="btn btn-auth btn-google" type="button">
                   <span class="auth-icon google-g" aria-hidden="true">G</span>
                   <span class="auth-copy">
@@ -151,48 +144,7 @@
                   </span>
                 </button>
               </div>
-              <p id="auth-status" class="hint">Secure OAuth via Firebase Auth.</p>
-              <details class="auth-x-help" id="auth-x-help">
-                <summary>X login still failing? Open this checklist</summary>
-                <ol>
-                  <li>
-                    <a href="https://developer.x.com/en/portal/dashboard" target="_blank" rel="noopener">developer.x.com</a>
-                    → your app → <strong>Keys and tokens</strong>
-                  </li>
-                  <li>
-                    Under <strong>Consumer Keys</strong>, copy
-                    <strong>API Key</strong> + <strong>API Key Secret</strong>
-                    (not Bearer, not Access Token, not OAuth 2 Client ID)
-                  </li>
-                  <li>
-                    <a href="https://console.firebase.google.com/project/spaceimpact-bb672/authentication/providers" target="_blank" rel="noopener">Firebase → Twitter provider</a>
-                    → paste those two values → Save
-                  </li>
-                  <li>
-                    X app → <strong>User authentication settings</strong>:
-                    OAuth <strong>1.0a</strong> ON · App type Web · Callback exactly:<br />
-                    <code>https://spaceimpact-bb672.firebaseapp.com/__/auth/handler</code>
-                  </li>
-                  <li>Website URL: <code>https://space-impact-base.vercel.app</code> · Save both sides · retry</li>
-                </ol>
-              </details>
-              <ol class="auth-setup-steps" id="auth-setup-steps">
-                <li>
-                  Open
-                  <a href="https://console.firebase.google.com/project/spaceimpact-bb672/authentication" target="_blank" rel="noopener"
-                    >Authentication</a
-                  >
-                  → click <strong>Get started</strong>
-                </li>
-                <li>
-                  <strong>Sign-in method</strong> → enable <strong>Google</strong> and
-                  <strong>Twitter</strong> (X)
-                </li>
-                <li>
-                  <strong>Settings → Authorized domains</strong> → add
-                  <code>space-impact-base.vercel.app</code>
-                </li>
-              </ol>
+              <p id="auth-status" class="hint">Secure OAuth via Firebase Auth · Google.</p>
               <button id="auth-back" class="btn btn-ghost" type="button">Back</button>
             </div>
 

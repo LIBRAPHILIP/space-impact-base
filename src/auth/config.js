@@ -1,7 +1,7 @@
 /**
  * Firebase web config — set via Vercel / .env
  * Create a project at https://console.firebase.google.com
- * Enable Authentication → Google + Twitter providers.
+ * Enable Authentication → Google provider.
  */
 export const firebaseConfig = {
   apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || '').trim(),

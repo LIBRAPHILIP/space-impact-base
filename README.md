@@ -48,14 +48,12 @@ VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
 
 Without a deployed NFT contract the game still runs and uses **demo local claims**.
 
-## Sign in (Google + X)
+## Sign in (Google)
 
-Social login uses **Firebase Auth**. First login creates the account (no separate password sign-up).
+Social login uses **Firebase Auth** (Google only). First login creates the account (no password).
 
 1. Create a project at [Firebase Console](https://console.firebase.google.com).
-2. Enable **Authentication** → **Sign-in method**:
-   - **Google**
-   - **Twitter** (this is X — needs API Key + API Secret from [developer.x.com](https://developer.x.com))
+2. Enable **Authentication** → **Sign-in method** → **Google**.
 3. Project settings → Your apps → Web app → copy config into `.env` / Vercel:
 
 ```env

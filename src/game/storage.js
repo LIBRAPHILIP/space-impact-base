@@ -1,4 +1,4 @@
-const KEY = 'space-impact-neon:v2';
+const BASE_KEY = 'space-impact-neon:v2';
 
 const DEFAULTS = {
   highScore: 0,
@@ -9,17 +9,27 @@ const DEFAULTS = {
   autoFire: true,
 };
 
+let activeUserId = null;
+
+export function setStorageUser(uid) {
+  activeUserId = uid || null;
+}
+
+function storageKey() {
+  return activeUserId ? `${BASE_KEY}:user:${activeUserId}` : BASE_KEY;
+}
+
 export function loadMeta() {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(storageKey()) || '{}') };
   } catch {
     return { ...DEFAULTS };
   }
 }
 
-export function saveMeta( partial) {
+export function saveMeta(partial) {
   const next = { ...loadMeta(), ...partial };
-  localStorage.setItem(KEY, JSON.stringify(next));
+  localStorage.setItem(storageKey(), JSON.stringify(next));
   return next;
 }
 

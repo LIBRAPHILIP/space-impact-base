@@ -48,6 +48,30 @@ VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
 
 Without a deployed NFT contract the game still runs and uses **demo local claims**.
 
+## Sign in (Google + X)
+
+Social login uses **Firebase Auth**. First login creates the account (no separate password sign-up).
+
+1. Create a project at [Firebase Console](https://console.firebase.google.com).
+2. Enable **Authentication** → **Sign-in method**:
+   - **Google**
+   - **Twitter** (this is X — needs API Key + API Secret from [developer.x.com](https://developer.x.com))
+3. Project settings → Your apps → Web app → copy config into `.env` / Vercel:
+
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+4. **Authorized domains**: add `localhost` and `space-impact-base.vercel.app` (Authentication → Settings).
+5. Redeploy Vercel after setting env vars.
+
+High scores are stored **per signed-in user** in the browser.
+
 ## Audio
 
 Procedural **neon synthwave BGM** + arcade **SFX** (Web Audio — no asset files).

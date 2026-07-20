@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@walletconnect/ethereum-provider": "^2.21.1",
+    "firebase": "^11.10.0",
     "viem": "^2.31.0"
   },
   "devDependencies": {

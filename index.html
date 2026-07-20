@@ -30,6 +30,17 @@
             <button id="btn-sfx" class="btn btn-icon active" type="button" aria-label="Toggle SFX">FX</button>
           </div>
           <div id="network-badge" class="network-badge offline">BASE</div>
+
+          <button id="signin-btn" class="btn btn-ghost" type="button">Sign in</button>
+          <div id="user-info" class="user-info hidden">
+            <img id="user-avatar" class="user-avatar" alt="" width="28" height="28" />
+            <div class="user-meta">
+              <span id="user-name" class="user-name"></span>
+              <span id="user-providers" class="user-providers"></span>
+            </div>
+            <button id="signout-btn" class="btn btn-ghost" type="button">Sign out</button>
+          </div>
+
           <button id="connect-btn" class="btn btn-primary" type="button">Connect Wallet</button>
           <div id="wallet-info" class="wallet-info hidden">
             <span id="wallet-mode" class="wallet-mode"></span>
@@ -94,6 +105,7 @@
                 Neon side-scroller with multi-phase bosses, bomb strikes, and level NFT badges on
                 <strong>Base</strong>.
               </p>
+              <p id="pilot-greeting" class="pilot-greeting hidden"></p>
               <div class="records" id="records">
                 <div><span>BEST SCORE</span><strong id="rec-score">0</strong></div>
                 <div><span>BEST SECTOR</span><strong id="rec-level">1</strong></div>
@@ -114,6 +126,33 @@
                 <button id="how-btn" class="btn btn-ghost btn-lg" type="button">Controls</button>
               </div>
               <p id="wallet-hint" class="hint">Connect a wallet on Base to mint level NFTs after each clear.</p>
+            </div>
+
+            <div class="overlay-card hidden" id="auth-card">
+              <p class="eyebrow">PILOT IDENTITY</p>
+              <h2>SIGN IN / SIGN UP</h2>
+              <p class="lede">
+                Continue with <strong>X</strong> or <strong>Google</strong>. First login creates your account
+                automatically — no password needed.
+              </p>
+              <div class="auth-options">
+                <button id="auth-x" class="btn btn-auth btn-x" type="button">
+                  <span class="auth-icon" aria-hidden="true">𝕏</span>
+                  <span class="auth-copy">
+                    <span class="opt-title">Continue with X</span>
+                    <span class="opt-sub">X / Twitter account</span>
+                  </span>
+                </button>
+                <button id="auth-google" class="btn btn-auth btn-google" type="button">
+                  <span class="auth-icon google-g" aria-hidden="true">G</span>
+                  <span class="auth-copy">
+                    <span class="opt-title">Continue with Google</span>
+                    <span class="opt-sub">Google account</span>
+                  </span>
+                </button>
+              </div>
+              <p id="auth-status" class="hint">Secure OAuth via Firebase Auth.</p>
+              <button id="auth-back" class="btn btn-ghost" type="button">Back</button>
             </div>
 
             <div class="overlay-card hidden" id="wallet-card">

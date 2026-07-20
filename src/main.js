@@ -8,7 +8,15 @@ import {
 } from './wallet/mint.js';
 import { ACTIVE_CHAIN, NFT_CONTRACT_ADDRESS, shortAddress, WC_PROJECT_ID } from './wallet/config.js';
 import { audio } from './audio/AudioEngine.js';
-import { loadMeta, saveMeta, recordRun, DIFFICULTY } from './game/storage.js';
+import { loadMeta, saveMeta, recordRun, DIFFICULTY, setStorageUser } from './game/storage.js';
+import {
+  initAuth,
+  onAuthChange,
+  signInWithGoogle,
+  signInWithX,
+  signOut,
+  isAuthConfigured,
+} from './auth/auth.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,14 +28,16 @@ const levelCard = $('level-card');
 const gameoverCard = $('gameover-card');
 const controlsCard = $('controls-card');
 const walletCard = $('wallet-card');
+const authCard = $('auth-card');
 
 let pendingLevelClear = null;
 let bannerEl = null;
 let returnToCard = menuCard;
 let meta = loadMeta();
+let authSnap = { configured: false, user: null, signedIn: false };
 
 function showCard(card) {
-  for (const c of [menuCard, pauseCard, levelCard, gameoverCard, controlsCard, walletCard]) {
+  for (const c of [menuCard, pauseCard, levelCard, gameoverCard, controlsCard, walletCard, authCard]) {
     c.classList.add('hidden');
   }
   if (card) card.classList.remove('hidden');
@@ -80,6 +90,114 @@ function refreshRecords() {
   $('rec-score').textContent = (meta.highScore || 0).toLocaleString();
   $('rec-level').textContent = String(meta.bestLevel || 1);
   $('rec-combo').textContent = `x${meta.bestCombo || 1}`;
+}
+
+function updateAuthUI(snap) {
+  authSnap = snap;
+  const signinBtn = $('signin-btn');
+  const userInfo = $('user-info');
+  const greeting = $('pilot-greeting');
+  const authStatus = $('auth-status');
+
+  if (snap.signedIn && snap.user) {
+    setStorageUser(snap.user.uid);
+    meta = loadMeta();
+    refreshRecords();
+    setDifficulty(meta.difficulty || 'pilot');
+
+    signinBtn.classList.add('hidden');
+    userInfo.classList.remove('hidden');
+    $('user-name').textContent = snap.user.displayName;
+    const tags = [];
+    if (snap.user.isX) tags.push('X');
+    if (snap.user.isGoogle) tags.push('Google');
+    $('user-providers').textContent = tags.join(' · ') || 'Pilot';
+    const av = $('user-avatar');
+    if (snap.user.photoURL) {
+      av.src = snap.user.photoURL;
+      av.classList.remove('hidden');
+    } else {
+      av.removeAttribute('src');
+      av.classList.add('hidden');
+    }
+
+    greeting.classList.remove('hidden');
+    greeting.innerHTML = snap.user.photoURL
+      ? `<img src="${snap.user.photoURL}" alt="" /><span>WELCOME, ${escapeHtml(snap.user.displayName).toUpperCase()}</span>`
+      : `<span>WELCOME, ${escapeHtml(snap.user.displayName).toUpperCase()}</span>`;
+  } else {
+    setStorageUser(null);
+    meta = loadMeta();
+    refreshRecords();
+
+    signinBtn.classList.remove('hidden');
+    userInfo.classList.add('hidden');
+    greeting.classList.add('hidden');
+    greeting.textContent = '';
+  }
+
+  if (authStatus) {
+    if (!snap.configured) {
+      authStatus.textContent =
+        'Auth not configured yet. Add Firebase env vars (Google + X providers) — see README.';
+    } else if (snap.signedIn) {
+      authStatus.textContent = `Signed in as ${snap.user.displayName}.`;
+    } else {
+      authStatus.textContent = 'Secure OAuth via Firebase Auth · X & Google.';
+    }
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function openAuthModal() {
+  returnToCard = !menuCard.classList.contains('hidden')
+    ? menuCard
+    : !levelCard.classList.contains('hidden')
+      ? levelCard
+      : menuCard;
+  setOverlay(true, authCard);
+  const ready = isAuthConfigured();
+  $('auth-x').disabled = !ready;
+  $('auth-google').disabled = !ready;
+  if (!ready) {
+    $('auth-status').textContent =
+      'Add VITE_FIREBASE_* env vars and enable Google + Twitter in Firebase Console.';
+  }
+}
+
+async function handleAuth(provider) {
+  const status = $('auth-status');
+  const xBtn = $('auth-x');
+  const gBtn = $('auth-google');
+  xBtn.disabled = true;
+  gBtn.disabled = true;
+  status.textContent = provider === 'x' ? 'Opening X…' : 'Opening Google…';
+  try {
+    const result = provider === 'x' ? await signInWithX() : await signInWithGoogle();
+    // redirect flows leave the page; popup returns here
+    if (result?.signedIn && result.user) {
+      toast(`Signed in as ${result.user.displayName}`);
+      status.textContent = `Welcome, ${result.user.displayName}`;
+      showCard(returnToCard || menuCard);
+    } else {
+      status.textContent = 'Redirecting to sign-in…';
+    }
+  } catch (e) {
+    console.error(e);
+    status.textContent = e.message || 'Sign-in failed';
+    toast(e.message || 'Sign-in failed');
+  } finally {
+    const ready = isAuthConfigured();
+    xBtn.disabled = !ready;
+    gBtn.disabled = !ready;
+  }
 }
 
 function setDifficulty(id) {
@@ -153,6 +271,7 @@ function updateContractStatus() {
   if (isContractConfigured()) parts.push(`NFT: ${shortAddress(NFT_CONTRACT_ADDRESS)}`);
   else parts.push('NFT: demo mode');
   parts.push(WC_PROJECT_ID ? 'WalletConnect: ready' : 'WC: set project id');
+  parts.push(isAuthConfigured() ? 'Auth: Google+X' : 'Auth: configure Firebase');
   el.textContent = parts.join(' · ');
 }
 
@@ -403,6 +522,32 @@ $('wallet-back').addEventListener('click', () => {
   audio.play('ui');
   showCard(returnToCard || menuCard);
 });
+
+$('signin-btn').addEventListener('click', () => {
+  audio.play('ui');
+  openAuthModal();
+});
+$('auth-back').addEventListener('click', () => {
+  audio.play('ui');
+  showCard(returnToCard || menuCard);
+});
+$('auth-x').addEventListener('click', async () => {
+  audio.play('ui');
+  await handleAuth('x');
+});
+$('auth-google').addEventListener('click', async () => {
+  audio.play('ui');
+  await handleAuth('google');
+});
+$('signout-btn').addEventListener('click', async () => {
+  audio.play('ui');
+  try {
+    await signOut();
+    toast('Signed out');
+  } catch (e) {
+    toast(e.message || 'Sign out failed');
+  }
+});
 $('connect-injected').addEventListener('click', async () => {
   audio.play('ui');
   try {
@@ -458,4 +603,8 @@ wallet.onChange((snap) => {
 updateWalletUI(wallet.snapshot());
 updateContractStatus();
 refreshRecords();
+
+initAuth();
+onAuthChange(updateAuthUI);
+
 game._draw();

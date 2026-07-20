@@ -1,0 +1,22 @@
+{
+  "name": "space-impact-base",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "compile": "node scripts/compile-solc.cjs",
+    "deploy:base-sepolia": "node scripts/deploy.cjs base-sepolia",
+    "deploy:base": "node scripts/deploy.cjs base"
+  },
+  "dependencies": {
+    "@walletconnect/ethereum-provider": "^2.21.1",
+    "viem": "^2.31.0"
+  },
+  "devDependencies": {
+    "solc": "^0.8.28",
+    "vite": "^6.3.5"
+  }
+}

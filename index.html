@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SPACE IMPACT // NEON GENESIS — Base</title>
+    <meta name="description" content="Modernized Space Impact on Base chain. Connect any wallet, clear levels, mint NFT badges." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <header class="top-bar">
+        <div class="brand">
+          <span class="brand-mark">◈</span>
+          <div>
+            <h1>SPACE IMPACT</h1>
+            <p class="subtitle">NEON GENESIS · BASE CHAIN</p>
+          </div>
+        </div>
+        <div class="wallet-panel">
+          <div class="audio-toggles" title="Audio">
+            <button id="btn-music" class="btn btn-icon active" type="button" aria-label="Toggle music">♪</button>
+            <button id="btn-sfx" class="btn btn-icon active" type="button" aria-label="Toggle SFX">FX</button>
+          </div>
+          <div id="network-badge" class="network-badge offline">BASE</div>
+          <button id="connect-btn" class="btn btn-primary" type="button">Connect Wallet</button>
+          <div id="wallet-info" class="wallet-info hidden">
+            <span id="wallet-mode" class="wallet-mode"></span>
+            <span id="wallet-address"></span>
+            <button id="disconnect-btn" class="btn btn-ghost" type="button">Disconnect</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <aside class="hud left-hud">
+          <div class="stat">
+            <label>SCORE</label>
+            <span id="hud-score">0</span>
+          </div>
+          <div class="stat">
+            <label>LEVEL</label>
+            <span id="hud-level">1</span>
+          </div>
+          <div class="stat">
+            <label>LIVES</label>
+            <span id="hud-lives">■■■</span>
+          </div>
+          <div class="stat">
+            <label>SHIELD</label>
+            <div class="bar"><div id="hud-shield" class="bar-fill"></div></div>
+          </div>
+          <div class="stat">
+            <label>WEAPON</label>
+            <span id="hud-weapon">PULSE</span>
+          </div>
+        </aside>
+
+        <div class="canvas-wrap">
+          <canvas id="game" width="960" height="540"></canvas>
+          <div id="overlay" class="overlay">
+            <div class="overlay-card" id="menu-card">
+              <p class="eyebrow">BASE · ONCHAIN ARCADE</p>
+              <h2>SPACE IMPACT<br /><span class="neon">NEON GENESIS</span></h2>
+              <p class="lede">
+                Classic side-scrolling mayhem, rebuilt with neon FX, boss raids, and
+                per-level NFT badges on <strong>Base</strong>.
+              </p>
+              <ul class="feature-list">
+                <li>Browser wallets or <strong>WalletConnect QR</strong> for mobile</li>
+                <li>Hard multi-phase bosses · neon synthwave audio</li>
+                <li>Clear a stage → mint a Level Badge NFT on Base</li>
+              </ul>
+              <div class="overlay-actions">
+                <button id="start-btn" class="btn btn-primary btn-lg" type="button">Engage Thrusters</button>
+                <button id="how-btn" class="btn btn-ghost btn-lg" type="button">Controls</button>
+              </div>
+              <p id="wallet-hint" class="hint">Connect a wallet on Base to mint level NFTs after each clear.</p>
+            </div>
+
+            <div class="overlay-card hidden" id="wallet-card">
+              <p class="eyebrow">BASE WALLET</p>
+              <h2>CONNECT</h2>
+              <p class="lede">Pick a browser extension or scan a QR code with your mobile wallet.</p>
+              <div class="wallet-options">
+                <button id="connect-injected" class="btn btn-primary btn-lg wallet-opt" type="button">
+                  <span class="opt-title">Browser Wallet</span>
+                  <span class="opt-sub">MetaMask · Coinbase · Rabby · Brave</span>
+                </button>
+                <button id="connect-wc" class="btn btn-accent btn-lg wallet-opt" type="button">
+                  <span class="opt-title">WalletConnect QR</span>
+                  <span class="opt-sub">Mobile wallets · scan to link Base</span>
+                </button>
+              </div>
+              <p id="wc-hint" class="hint">WalletConnect needs a free Project ID in <code>.env</code>.</p>
+              <button id="wallet-back" class="btn btn-ghost" type="button">Back</button>
+            </div>
+
+            <div class="overlay-card hidden" id="pause-card">
+              <h2>SYSTEM PAUSED</h2>
+              <p>Press <kbd>P</kbd> or resume to continue.</p>
+              <button id="resume-btn" class="btn btn-primary btn-lg" type="button">Resume</button>
+            </div>
+
+            <div class="overlay-card hidden" id="level-card">
+              <p class="eyebrow">SECTOR CLEARED</p>
+              <h2 id="level-title">LEVEL 1 COMPLETE</h2>
+              <p id="level-score" class="lede"></p>
+              <div class="mint-box">
+                <div class="mint-art" id="mint-art">L1</div>
+                <div>
+                  <h3>Level Badge NFT</h3>
+                  <p id="mint-status">Ready to mint on Base</p>
+                  <button id="mint-btn" class="btn btn-accent" type="button" disabled>Mint Badge</button>
+                </div>
+              </div>
+              <div class="overlay-actions">
+                <button id="next-btn" class="btn btn-primary btn-lg" type="button">Next Sector</button>
+              </div>
+            </div>
+
+            <div class="overlay-card hidden" id="gameover-card">
+              <p class="eyebrow">HULL BREACH</p>
+              <h2>MISSION FAILED</h2>
+              <p id="final-score" class="lede"></p>
+              <div class="overlay-actions">
+                <button id="retry-btn" class="btn btn-primary btn-lg" type="button">Reboot Mission</button>
+                <button id="menu-btn" class="btn btn-ghost btn-lg" type="button">Main Menu</button>
+              </div>
+            </div>
+
+            <div class="overlay-card hidden" id="controls-card">
+              <h2>PILOT CONTROLS</h2>
+              <div class="controls-grid">
+                <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows — move</div>
+                <div><kbd>Space</kbd> / hold click — fire</div>
+                <div><kbd>Shift</kbd> — boost (burns shield regen)</div>
+                <div><kbd>P</kbd> — pause</div>
+                <div>Touch: drag ship · tap fire zone</div>
+              </div>
+              <button id="controls-back" class="btn btn-primary" type="button">Back</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hud right-hud">
+          <div class="stat">
+            <label>CHAIN</label>
+            <span>Base</span>
+          </div>
+          <div class="stat">
+            <label>WAVE</label>
+            <span id="hud-wave">1 / 5</span>
+          </div>
+          <div class="stat">
+            <label>KILLS</label>
+            <span id="hud-kills">0</span>
+          </div>
+          <div class="stat">
+            <label>BADGES</label>
+            <span id="hud-badges">—</span>
+          </div>
+          <div class="combo-meter">
+            <label>COMBO</label>
+            <span id="hud-combo">x1</span>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="bottom-bar">
+        <span>Built for Base · Mint after each level clear</span>
+        <span id="contract-status">NFT contract: not configured</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

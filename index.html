@@ -152,6 +152,23 @@
                 </button>
               </div>
               <p id="auth-status" class="hint">Secure OAuth via Firebase Auth.</p>
+              <ol class="auth-setup-steps" id="auth-setup-steps">
+                <li>
+                  Open
+                  <a href="https://console.firebase.google.com/project/spaceimpact-bb672/authentication" target="_blank" rel="noopener"
+                    >Authentication</a
+                  >
+                  → click <strong>Get started</strong>
+                </li>
+                <li>
+                  <strong>Sign-in method</strong> → enable <strong>Google</strong> and
+                  <strong>Twitter</strong> (X)
+                </li>
+                <li>
+                  <strong>Settings → Authorized domains</strong> → add
+                  <code>space-impact-base.vercel.app</code>
+                </li>
+              </ol>
               <button id="auth-back" class="btn btn-ghost" type="button">Back</button>
             </div>
 

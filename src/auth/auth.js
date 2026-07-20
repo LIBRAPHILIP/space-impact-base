@@ -131,6 +131,17 @@ async function signInWithProvider(provider, label) {
         `${label} sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in method.`
       );
     }
+    if (
+      err?.code === 'auth/configuration-not-found' ||
+      /CONFIGURATION_NOT_FOUND|auth config not found/i.test(err?.message || '')
+    ) {
+      throw new Error(
+        'Firebase Authentication is not enabled yet. Open Firebase Console → Authentication → Get started, then enable Google and Twitter (X).'
+      );
+    }
+    if (err?.code === 'auth/invalid-api-key') {
+      throw new Error('Invalid Firebase API key. Check VITE_FIREBASE_API_KEY.');
+    }
     throw new Error(err?.message || `${label} sign-in failed`);
   }
 }

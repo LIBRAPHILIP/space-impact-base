@@ -136,14 +136,19 @@ function updateAuthUI(snap) {
     greeting.textContent = '';
   }
 
+  const setupSteps = $('auth-setup-steps');
   if (authStatus) {
     if (!snap.configured) {
       authStatus.textContent =
         'Auth not configured yet. Add Firebase env vars (Google + X providers) — see README.';
+      setupSteps?.classList.remove('hidden');
     } else if (snap.signedIn) {
       authStatus.textContent = `Signed in as ${snap.user.displayName}.`;
+      setupSteps?.classList.add('hidden');
     } else {
-      authStatus.textContent = 'Secure OAuth via Firebase Auth · X & Google.';
+      authStatus.textContent =
+        'If login fails with “config not found”, click Get started under Authentication first.';
+      setupSteps?.classList.remove('hidden');
     }
   }
 }

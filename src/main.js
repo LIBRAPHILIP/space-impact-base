@@ -16,6 +16,7 @@ import {
   signInWithX,
   signOut,
   isAuthConfigured,
+  consumeLastAuthError,
 } from './auth/auth.js';
 
 const $ = (id) => document.getElementById(id);
@@ -611,5 +612,15 @@ refreshRecords();
 
 initAuth();
 onAuthChange(updateAuthUI);
+
+// Show X/Google redirect errors after return to the page
+const redirectAuthErr = consumeLastAuthError();
+if (redirectAuthErr) {
+  toast(redirectAuthErr);
+  setOverlay(true, authCard);
+  const status = $('auth-status');
+  if (status) status.textContent = redirectAuthErr;
+  $('auth-x-help')?.setAttribute('open', '');
+}
 
 game._draw();

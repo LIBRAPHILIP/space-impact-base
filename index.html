@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>SPACE IMPACT // NEON GENESIS — Base</title>
     <meta name="description" content="Modernized Space Impact on Base chain. Connect any wallet, clear levels, mint NFT badges." />
+    <meta name="theme-color" content="#05060f" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -60,23 +61,54 @@
             <label>WEAPON</label>
             <span id="hud-weapon">PULSE</span>
           </div>
+          <div class="stat">
+            <label>BOMBS <kbd class="mini">B</kbd></label>
+            <span id="hud-bombs">◆◆</span>
+          </div>
         </aside>
 
         <div class="canvas-wrap">
           <canvas id="game" width="960" height="540"></canvas>
+
+          <div class="touch-controls" id="touch-controls" aria-hidden="true">
+            <div class="touch-pad">
+              <button type="button" class="touch-btn" data-dir="up">▲</button>
+              <div class="touch-mid">
+                <button type="button" class="touch-btn" data-dir="left">◀</button>
+                <button type="button" class="touch-btn" data-dir="right">▶</button>
+              </div>
+              <button type="button" class="touch-btn" data-dir="down">▼</button>
+            </div>
+            <div class="touch-actions">
+              <button type="button" class="touch-btn touch-bomb" data-act="bomb">B</button>
+              <button type="button" class="touch-btn touch-boost" data-act="boost">⇧</button>
+              <button type="button" class="touch-btn touch-fire" data-act="fire">FIRE</button>
+            </div>
+          </div>
+
           <div id="overlay" class="overlay">
             <div class="overlay-card" id="menu-card">
               <p class="eyebrow">BASE · ONCHAIN ARCADE</p>
               <h2>SPACE IMPACT<br /><span class="neon">NEON GENESIS</span></h2>
               <p class="lede">
-                Classic side-scrolling mayhem, rebuilt with neon FX, boss raids, and
-                per-level NFT badges on <strong>Base</strong>.
+                Neon side-scroller with multi-phase bosses, bomb strikes, and level NFT badges on
+                <strong>Base</strong>.
               </p>
-              <ul class="feature-list">
-                <li>Browser wallets or <strong>WalletConnect QR</strong> for mobile</li>
-                <li>Hard multi-phase bosses · neon synthwave audio</li>
-                <li>Clear a stage → mint a Level Badge NFT on Base</li>
-              </ul>
+              <div class="records" id="records">
+                <div><span>BEST SCORE</span><strong id="rec-score">0</strong></div>
+                <div><span>BEST SECTOR</span><strong id="rec-level">1</strong></div>
+                <div><span>MAX COMBO</span><strong id="rec-combo">x1</strong></div>
+              </div>
+              <div class="diff-row" id="diff-row">
+                <button type="button" class="diff-btn" data-diff="rookie">ROOKIE</button>
+                <button type="button" class="diff-btn active" data-diff="pilot">PILOT</button>
+                <button type="button" class="diff-btn" data-diff="ace">ACE</button>
+              </div>
+              <p class="diff-desc" id="diff-desc">Balanced neon combat</p>
+              <label class="check-row">
+                <input type="checkbox" id="auto-fire" checked />
+                <span>Auto-fire (Space still works)</span>
+              </label>
               <div class="overlay-actions">
                 <button id="start-btn" class="btn btn-primary btn-lg" type="button">Engage Thrusters</button>
                 <button id="how-btn" class="btn btn-ghost btn-lg" type="button">Controls</button>
@@ -104,7 +136,7 @@
 
             <div class="overlay-card hidden" id="pause-card">
               <h2>SYSTEM PAUSED</h2>
-              <p>Press <kbd>P</kbd> or resume to continue.</p>
+              <p>Press <kbd>P</kbd> / <kbd>Esc</kbd> or resume.</p>
               <button id="resume-btn" class="btn btn-primary btn-lg" type="button">Resume</button>
             </div>
 
@@ -112,6 +144,7 @@
               <p class="eyebrow">SECTOR CLEARED</p>
               <h2 id="level-title">LEVEL 1 COMPLETE</h2>
               <p id="level-score" class="lede"></p>
+              <p id="level-stats" class="stats-line"></p>
               <div class="mint-box">
                 <div class="mint-art" id="mint-art">L1</div>
                 <div>
@@ -129,6 +162,7 @@
               <p class="eyebrow">HULL BREACH</p>
               <h2>MISSION FAILED</h2>
               <p id="final-score" class="lede"></p>
+              <p id="final-stats" class="stats-line"></p>
               <div class="overlay-actions">
                 <button id="retry-btn" class="btn btn-primary btn-lg" type="button">Reboot Mission</button>
                 <button id="menu-btn" class="btn btn-ghost btn-lg" type="button">Main Menu</button>
@@ -139,10 +173,11 @@
               <h2>PILOT CONTROLS</h2>
               <div class="controls-grid">
                 <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows — move</div>
-                <div><kbd>Space</kbd> / hold click — fire</div>
+                <div><kbd>Space</kbd> / hold click — fire (or enable auto-fire)</div>
                 <div><kbd>Shift</kbd> — boost (burns shield regen)</div>
-                <div><kbd>P</kbd> — pause</div>
-                <div>Touch: drag ship · tap fire zone</div>
+                <div><kbd>B</kbd> / <kbd>F</kbd> — detonate bomb (clears bullets)</div>
+                <div><kbd>P</kbd> / <kbd>Esc</kbd> — pause</div>
+                <div>Mobile: on-screen pad · FIRE · B bomb · ⇧ boost</div>
               </div>
               <button id="controls-back" class="btn btn-primary" type="button">Back</button>
             </div>
@@ -153,6 +188,10 @@
           <div class="stat">
             <label>CHAIN</label>
             <span>Base</span>
+          </div>
+          <div class="stat">
+            <label>DIFF</label>
+            <span id="hud-diff">PILOT</span>
           </div>
           <div class="stat">
             <label>WAVE</label>
@@ -174,7 +213,7 @@
       </main>
 
       <footer class="bottom-bar">
-        <span>Built for Base · Mint after each level clear</span>
+        <span>Built for Base · Bombs · Multi-phase bosses · NFT badges</span>
         <span id="contract-status">NFT contract: not configured</span>
       </footer>
     </div>

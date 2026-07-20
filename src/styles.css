@@ -525,6 +525,180 @@ kbd {
   color: var(--cyan);
 }
 
+.records {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.records > div {
+  background: var(--glass);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 12px;
+  padding: 0.55rem 0.4rem;
+}
+
+.records span {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.records strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--cyan);
+}
+
+.diff-row {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+.diff-btn {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 147, 176, 0.35);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.diff-btn.active {
+  color: var(--text);
+  border-color: rgba(0, 240, 255, 0.55);
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(139, 92, 255, 0.2));
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+}
+
+.diff-btn[data-diff="ace"].active {
+  border-color: rgba(255, 43, 214, 0.55);
+  background: linear-gradient(135deg, rgba(255, 43, 214, 0.2), rgba(255, 138, 61, 0.15));
+  box-shadow: 0 0 16px rgba(255, 43, 214, 0.2);
+}
+
+.diff-desc {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  min-height: 1.3em;
+}
+
+.check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #c7dbf0;
+  font-size: 0.98rem;
+  margin-bottom: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-row input {
+  accent-color: var(--cyan);
+  width: 1rem;
+  height: 1rem;
+}
+
+.stats-line {
+  color: var(--cyan);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+kbd.mini {
+  font-size: 0.55rem;
+  padding: 0 0.25rem;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+/* Mobile touch controls */
+.touch-controls {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  padding: 0.5rem;
+}
+
+.touch-pad,
+.touch-actions {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 0.6rem;
+}
+
+.touch-pad {
+  left: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: center;
+}
+
+.touch-mid {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.touch-actions {
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-end;
+}
+
+.touch-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  background: rgba(5, 8, 20, 0.55);
+  color: var(--cyan);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  backdrop-filter: blur(6px);
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-fire {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border-color: rgba(255, 43, 214, 0.5);
+  color: var(--magenta);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.touch-bomb {
+  border-color: rgba(255, 59, 107, 0.5);
+  color: var(--danger);
+}
+
+.touch-btn:active,
+.touch-btn.active {
+  background: rgba(0, 240, 255, 0.2);
+  transform: scale(0.96);
+}
+
 @media (max-width: 980px) {
   .stage {
     grid-template-columns: 1fr;
@@ -555,6 +729,14 @@ kbd {
   .top-bar {
     flex-wrap: wrap;
   }
+
+  .touch-controls {
+    display: block;
+  }
+
+  .records {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -573,5 +755,21 @@ kbd {
   .mint-box {
     flex-direction: column;
     text-align: center;
+  }
+
+  .touch-btn {
+    width: 46px;
+    height: 46px;
+  }
+
+  .touch-fire {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (pointer: coarse) {
+  .touch-controls {
+    display: block;
   }
 }

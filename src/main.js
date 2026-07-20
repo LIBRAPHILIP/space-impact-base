@@ -8,6 +8,7 @@ import {
 } from './wallet/mint.js';
 import { ACTIVE_CHAIN, NFT_CONTRACT_ADDRESS, shortAddress, WC_PROJECT_ID } from './wallet/config.js';
 import { audio } from './audio/AudioEngine.js';
+import { loadMeta, saveMeta, recordRun, DIFFICULTY } from './game/storage.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,6 +24,7 @@ const walletCard = $('wallet-card');
 let pendingLevelClear = null;
 let bannerEl = null;
 let returnToCard = menuCard;
+let meta = loadMeta();
 
 function showCard(card) {
   for (const c of [menuCard, pauseCard, levelCard, gameoverCard, controlsCard, walletCard]) {
@@ -62,7 +64,7 @@ function showBanner(text) {
   if (!bannerEl) {
     bannerEl = document.createElement('div');
     bannerEl.style.cssText =
-      'position:absolute;top:18%;left:50%;transform:translateX(-50%);z-index:6;pointer-events:none;font-family:Orbitron,sans-serif;font-size:1.1rem;letter-spacing:0.2em;color:#ff2bd6;text-shadow:0 0 20px rgba(255,43,214,0.6);transition:opacity 0.4s;white-space:nowrap;';
+      'position:absolute;top:16%;left:50%;transform:translateX(-50%);z-index:6;pointer-events:none;font-family:Orbitron,sans-serif;font-size:1.05rem;letter-spacing:0.18em;color:#ff2bd6;text-shadow:0 0 20px rgba(255,43,214,0.6);transition:opacity 0.4s;white-space:nowrap;';
     canvas.parentElement.appendChild(bannerEl);
   }
   bannerEl.textContent = text;
@@ -73,16 +75,36 @@ function showBanner(text) {
   }, 1600);
 }
 
+function refreshRecords() {
+  meta = loadMeta();
+  $('rec-score').textContent = (meta.highScore || 0).toLocaleString();
+  $('rec-level').textContent = String(meta.bestLevel || 1);
+  $('rec-combo').textContent = `x${meta.bestCombo || 1}`;
+}
+
+function setDifficulty(id) {
+  if (!DIFFICULTY[id]) return;
+  meta = saveMeta({ difficulty: id });
+  document.querySelectorAll('.diff-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.diff === id);
+  });
+  $('diff-desc').textContent = DIFFICULTY[id].desc;
+  game.setOptions({ difficulty: id, autoFire: $('auto-fire').checked });
+}
+
 function updateHud(h) {
   if (!h) return;
   $('hud-score').textContent = h.score.toLocaleString();
   $('hud-level').textContent = String(h.level);
   $('hud-lives').textContent = '■'.repeat(Math.max(0, h.lives)) || '—';
   $('hud-shield').style.width = `${Math.round((h.shield || 0) * 100)}%`;
-  $('hud-weapon').textContent = h.weapon;
+  $('hud-weapon').textContent = h.overdrive ? `${h.weapon}★` : h.weapon;
   $('hud-wave').textContent = `${h.wave} / ${h.waves}`;
   $('hud-kills').textContent = String(h.kills);
   $('hud-combo').textContent = `x${h.combo}`;
+  $('hud-bombs').textContent = '◆'.repeat(Math.max(0, h.bombs)) || '—';
+  $('hud-diff').textContent = h.difficulty || 'PILOT';
+  $('hud-combo').style.color = h.combo >= 8 ? '#ff2bd6' : h.combo >= 4 ? '#ff8a3d' : '';
 }
 
 function updateWalletUI(snap) {
@@ -103,8 +125,8 @@ function updateWalletUI(snap) {
     badge.classList.toggle('wrong', !snap.onBase);
     badge.classList.remove('offline');
     hint.textContent = snap.onBase
-      ? `Connected on ${snap.chainLabel}${snap.mode === 'walletconnect' ? ' via WalletConnect' : ''}. Clear sectors to mint.`
-      : `Connected, but switch to ${snap.chainLabel} to mint.`;
+      ? `Connected on ${snap.chainLabel}${snap.mode === 'walletconnect' ? ' via WalletConnect' : ''}.`
+      : `Connected — switch to ${snap.chainLabel} to mint.`;
     refreshBadges();
   } else {
     connectBtn.classList.remove('hidden');
@@ -119,8 +141,7 @@ function updateWalletUI(snap) {
 
 async function refreshBadges() {
   try {
-    const n = await getBadgeCount();
-    $('hud-badges').textContent = String(n);
+    $('hud-badges').textContent = String(await getBadgeCount());
   } catch {
     $('hud-badges').textContent = '—';
   }
@@ -129,50 +150,44 @@ async function refreshBadges() {
 function updateContractStatus() {
   const el = $('contract-status');
   const parts = [];
-  if (isContractConfigured()) {
-    parts.push(`NFT: ${shortAddress(NFT_CONTRACT_ADDRESS)} · ${ACTIVE_CHAIN.label}`);
-  } else {
-    parts.push('NFT: demo mode');
-  }
-  parts.push(WC_PROJECT_ID ? 'WalletConnect: ready' : 'WalletConnect: set VITE_WALLETCONNECT_PROJECT_ID');
+  if (isContractConfigured()) parts.push(`NFT: ${shortAddress(NFT_CONTRACT_ADDRESS)}`);
+  else parts.push('NFT: demo mode');
+  parts.push(WC_PROJECT_ID ? 'WalletConnect: ready' : 'WC: set project id');
   el.textContent = parts.join(' · ');
 }
 
 function openWalletModal() {
-  returnToCard =
-    !menuCard.classList.contains('hidden')
-      ? menuCard
-      : !pauseCard.classList.contains('hidden')
-        ? pauseCard
-        : !levelCard.classList.contains('hidden')
-          ? levelCard
-          : menuCard;
+  returnToCard = !menuCard.classList.contains('hidden')
+    ? menuCard
+    : !levelCard.classList.contains('hidden')
+      ? levelCard
+      : menuCard;
   setOverlay(true, walletCard);
   const wcBtn = $('connect-wc');
   const wcHint = $('wc-hint');
   if (!WC_PROJECT_ID) {
     wcBtn.disabled = true;
-    wcHint.textContent =
-      'WalletConnect QR needs VITE_WALLETCONNECT_PROJECT_ID in .env (free at cloud.reown.com).';
+    wcHint.textContent = 'Set VITE_WALLETCONNECT_PROJECT_ID for QR connect.';
   } else {
     wcBtn.disabled = false;
-    wcHint.textContent = 'Scan the QR with Coinbase Wallet, MetaMask Mobile, Rainbow, etc.';
+    wcHint.textContent = 'Scan with Coinbase Wallet, MetaMask Mobile, Rainbow, etc.';
   }
   const inj = $('connect-injected');
   const snap = wallet.snapshot();
   inj.disabled = !snap.hasInjected;
-  if (!snap.hasInjected) {
-    inj.querySelector('.opt-sub').textContent = 'No extension detected — use QR below';
-  }
 }
 
 async function prepareMintUI(clear) {
   pendingLevelClear = clear;
   $('level-title').textContent = `LEVEL ${clear.level} COMPLETE`;
   $('level-score').textContent = `${clear.name} · Score ${clear.score.toLocaleString()} · ${clear.kills} kills`;
+  $('level-stats').textContent = `Max combo x${clear.maxCombo || 1} · Accuracy ${clear.accuracy || 0}%`;
   $('mint-art').textContent = `L${clear.level}`;
   const mintBtn = $('mint-btn');
   const status = $('mint-status');
+
+  recordRun({ score: clear.score, level: clear.level, maxCombo: clear.maxCombo });
+  refreshRecords();
 
   const snap = wallet.snapshot();
   if (!snap.connected) {
@@ -201,9 +216,7 @@ async function prepareMintUI(clear) {
   if (already) {
     mintBtn.disabled = true;
     mintBtn.textContent = 'Already Minted';
-    status.textContent = isContractConfigured()
-      ? 'This level badge is already in your wallet.'
-      : 'Already claimed in demo mode.';
+    status.textContent = 'This level badge is already claimed.';
     mintBtn.onclick = null;
     return;
   }
@@ -211,8 +224,8 @@ async function prepareMintUI(clear) {
   mintBtn.disabled = false;
   mintBtn.textContent = isContractConfigured() ? 'Mint Badge on Base' : 'Claim Demo Badge';
   status.textContent = isContractConfigured()
-    ? `Mint "${clear.badgeName}" NFT on ${ACTIVE_CHAIN.label}.`
-    : 'Contract not set — claim is stored locally until you deploy.';
+    ? `Mint "${clear.badgeName}" on ${ACTIVE_CHAIN.label}.`
+    : 'Demo claim (local) until NFT contract is deployed.';
   mintBtn.onclick = () => doMint(clear);
 }
 
@@ -259,18 +272,19 @@ const game = new Game(canvas, {
     } else if (state === 'menu') {
       setOverlay(true, menuCard);
       audio.stopBgm();
+      refreshRecords();
     }
   },
   onHud: updateHud,
   onBanner: showBanner,
-  onSfx(name) {
-    audio.play(name);
-  },
-  onLevelClear(clear) {
-    prepareMintUI(clear);
-  },
-  onGameOver({ score, level, kills }) {
-    $('final-score').textContent = `Score ${score.toLocaleString()} · Reached sector ${level} · ${kills} kills`;
+  onSfx: (name) => audio.play(name),
+  onMusicIntensity: (n) => audio.setIntensity(n),
+  onLevelClear: (clear) => prepareMintUI(clear),
+  onGameOver({ score, level, kills, maxCombo, accuracy, time }) {
+    recordRun({ score, level, maxCombo });
+    refreshRecords();
+    $('final-score').textContent = `Score ${score.toLocaleString()} · Sector ${level} · ${kills} kills`;
+    $('final-stats').textContent = `Max combo x${maxCombo} · Accuracy ${accuracy}% · Time ${time}s`;
   },
 });
 
@@ -278,13 +292,80 @@ async function unlockAudio() {
   await audio.unlock();
 }
 
-// UI wiring
+function applyOptionsAndStart(level = 1) {
+  game.setOptions({
+    difficulty: meta.difficulty || 'pilot',
+    autoFire: $('auto-fire').checked,
+  });
+  saveMeta({ autoFire: $('auto-fire').checked });
+  game.start(level);
+}
+
+// Difficulty UI
+document.querySelectorAll('.diff-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    audio.play('ui');
+    setDifficulty(btn.dataset.diff);
+  });
+});
+setDifficulty(meta.difficulty || 'pilot');
+$('auto-fire').checked = meta.autoFire !== false;
+$('auto-fire').addEventListener('change', () => {
+  saveMeta({ autoFire: $('auto-fire').checked });
+  game.setOptions({ autoFire: $('auto-fire').checked });
+});
+
+// Touch controls
+const touch = $('touch-controls');
+function bindTouch(el, on, off) {
+  const start = (e) => {
+    e.preventDefault();
+    el.classList.add('active');
+    on();
+  };
+  const end = (e) => {
+    e.preventDefault();
+    el.classList.remove('active');
+    off();
+  };
+  el.addEventListener('pointerdown', start);
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointerleave', end);
+  el.addEventListener('pointercancel', end);
+}
+
+touch.querySelectorAll('[data-dir]').forEach((btn) => {
+  const dir = btn.dataset.dir;
+  bindTouch(
+    btn,
+    () => {
+      game.input[dir] = true;
+    },
+    () => {
+      game.input[dir] = false;
+    }
+  );
+});
+touch.querySelectorAll('[data-act]').forEach((btn) => {
+  const act = btn.dataset.act;
+  bindTouch(
+    btn,
+    () => {
+      game.input[act] = true;
+    },
+    () => {
+      game.input[act] = false;
+      if (act === 'bomb') game._bombPressed = false;
+    }
+  );
+});
+
+// Buttons
 $('start-btn').addEventListener('click', async () => {
   audio.play('ui');
   await unlockAudio();
-  game.start(1);
+  applyOptionsAndStart(1);
 });
-
 $('how-btn').addEventListener('click', () => {
   audio.play('ui');
   showCard(controlsCard);
@@ -301,13 +382,12 @@ $('resume-btn').addEventListener('click', async () => {
 $('next-btn').addEventListener('click', async () => {
   await unlockAudio();
   audio.play('ui');
-  const next = (pendingLevelClear?.level || game.level) + 1;
-  game.start(next);
+  applyOptionsAndStart((pendingLevelClear?.level || game.level) + 1);
 });
 $('retry-btn').addEventListener('click', async () => {
   await unlockAudio();
   audio.play('ui');
-  game.start(1);
+  applyOptionsAndStart(1);
 });
 $('menu-btn').addEventListener('click', () => {
   audio.play('ui');
@@ -319,28 +399,21 @@ $('connect-btn').addEventListener('click', () => {
   audio.play('ui');
   openWalletModal();
 });
-
 $('wallet-back').addEventListener('click', () => {
   audio.play('ui');
   showCard(returnToCard || menuCard);
 });
-
 $('connect-injected').addEventListener('click', async () => {
   audio.play('ui');
   try {
     await wallet.connect('injected');
     toast(`Connected · ${ACTIVE_CHAIN.label}`);
-    if (pendingLevelClear && !levelCard.classList.contains('hidden')) {
-      await prepareMintUI(pendingLevelClear);
-    } else {
-      showCard(returnToCard || menuCard);
-    }
+    if (pendingLevelClear && !levelCard.classList.contains('hidden')) await prepareMintUI(pendingLevelClear);
+    else showCard(returnToCard || menuCard);
   } catch (e) {
-    console.error(e);
     toast(e.message || 'Wallet connection failed');
   }
 });
-
 $('connect-wc').addEventListener('click', async () => {
   audio.play('ui');
   try {
@@ -350,22 +423,17 @@ $('connect-wc').addEventListener('click', async () => {
     if (pendingLevelClear && game.state === 'levelclear') {
       setOverlay(true, levelCard);
       await prepareMintUI(pendingLevelClear);
-    } else {
-      showCard(returnToCard || menuCard);
-    }
+    } else showCard(returnToCard || menuCard);
   } catch (e) {
-    console.error(e);
     toast(e.message || 'WalletConnect failed');
   }
 });
-
 $('disconnect-btn').addEventListener('click', async () => {
   audio.play('ui');
   await wallet.disconnect();
   toast('Wallet disconnected');
 });
 
-// Audio toggles
 let musicOn = true;
 let sfxOn = true;
 $('btn-music').addEventListener('click', async () => {
@@ -385,12 +453,9 @@ $('btn-sfx').addEventListener('click', async () => {
 
 wallet.onChange((snap) => {
   updateWalletUI(snap);
-  if (snap.connected && pendingLevelClear && game.state === 'levelclear') {
-    prepareMintUI(pendingLevelClear);
-  }
+  if (snap.connected && pendingLevelClear && game.state === 'levelclear') prepareMintUI(pendingLevelClear);
 });
 updateWalletUI(wallet.snapshot());
 updateContractStatus();
-
-// Draw idle frame on menu
+refreshRecords();
 game._draw();

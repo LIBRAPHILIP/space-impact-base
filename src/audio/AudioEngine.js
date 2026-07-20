@@ -13,10 +13,19 @@ export class AudioEngine {
     this.musicOn = true;
     this.sfxOn = true;
     this.bgmPlaying = false;
+    this.intensity = 0; // 0 normal, 1 boss, 2 enrage
     this._nodes = [];
     this._step = 0;
     this._timer = null;
     this._started = false;
+  }
+
+  setIntensity(level = 0) {
+    this.intensity = Math.max(0, Math.min(2, level));
+    if (this.musicGain && this.musicOn && this.ctx) {
+      const base = 0.28 + this.intensity * 0.06;
+      this.musicGain.gain.setTargetAtTime(base, this.ctx.currentTime, 0.15);
+    }
   }
 
   async ensure() {
@@ -270,29 +279,32 @@ export class AudioEngine {
     if (!this.ctx || !this.bgmPlaying || !this.musicOn || !this.enabled) return;
     const step = this._step % 16;
     const bar = Math.floor(this._step / 16) % 4;
+    const inten = this.intensity;
 
-    // Kick on 0, 8
-    if (step === 0 || step === 8) this._kick();
-    // snare-ish on 4, 12
-    if (step === 4 || step === 12) this._hat(0.06, 0.05);
-    // hats
-    if (step % 2 === 1) this._hat(0.03, 0.025);
+    // Kick on 0, 8 (+ extra on enrage)
+    if (step === 0 || step === 8 || (inten >= 2 && step === 4)) this._kick();
+    if (step === 4 || step === 12) this._hat(0.06, 0.05 + inten * 0.01);
+    if (step % 2 === 1 || inten >= 1) this._hat(0.03, 0.02 + inten * 0.01);
 
-    // Bass line
-    const bassScale = [55, 55, 65.41, 73.42, 82.41, 73.42, 65.41, 55];
-    if (step % 2 === 0) {
+    const bassScale =
+      inten >= 2
+        ? [55, 58.27, 65.41, 73.42, 82.41, 87.31, 73.42, 65.41]
+        : [55, 55, 65.41, 73.42, 82.41, 73.42, 65.41, 55];
+    if (step % 2 === 0 || inten >= 2) {
       const note = bassScale[(step / 2 + bar) % bassScale.length];
-      this._bass(note);
+      this._bass(note * (inten >= 2 ? 1.02 : 1));
     }
 
-    // Arp lead (modern neon)
-    const arp = [220, 277.18, 329.63, 440, 329.63, 277.18, 246.94, 329.63];
-    if (step % 1 === 0 && (step + bar) % 3 !== 2) {
+    const arp =
+      inten >= 1
+        ? [220, 277.18, 329.63, 440, 493.88, 392, 329.63, 277.18]
+        : [220, 277.18, 329.63, 440, 329.63, 277.18, 246.94, 329.63];
+    if ((step + bar) % (inten >= 2 ? 1 : 3) !== 2) {
       this._arp(arp[(step + bar * 2) % arp.length] * (bar === 3 && step > 10 ? 1.5 : 1));
     }
 
-    // Atmosphere pulse every bar
     if (step === 0) this._atmos(bar);
+    if (inten >= 1 && step === 8) this._atmos(bar + 1);
 
     this._step += 1;
   }
